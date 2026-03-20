@@ -256,9 +256,36 @@
             .content { padding: 25px; }
             .info-box { padding: 20px; }
         }
+
+        /* =========================================================
+           [추가된 스타일] 로딩 오버레이 UI
+           ========================================================= */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; justify-content: center; align-items: center;
+            z-index: 9999; flex-direction: column; color: white;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-text { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .loading-desc { font-size: 15px; color: #ddd; text-align: center; }
     </style>
 </head>
 <body>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="progress-text" id="progressPercent">0%</div>
+        <div class="loading-desc">사진 파일 용량에 따라 시간이 걸릴 수 있습니다.<br>창을 닫지 말고 잠시만 기다려주세요.</div>
+    </div>
 
     <div class="container">
         <header class="banner">
@@ -432,6 +459,8 @@
         const form = document.getElementById('subsidyForm');
         const phoneInput = document.getElementById('phone');
         const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const progressPercent = document.getElementById('progressPercent');
 
         function showExtraInput(targetId, btnElement) {
             document.getElementById(targetId).style.display = 'block'; 
@@ -522,7 +551,7 @@
         });
 
         // =========================================================
-        // [수정됨] 사진을 텍스트(Base64)로 변환해주는 마법의 함수 추가
+        // [수정됨] 사진을 텍스트(Base64)로 변환해주는 마법의 함수
         // =========================================================
         const getBase64 = (file) => new Promise((resolve, reject) => {
             if (!file) { resolve(null); return; }
@@ -533,13 +562,14 @@
         });
 
         // =========================================================
-        // [핵심] 실제 구글 서버(백엔드)로 데이터 보내기
+        // [핵심] 실제 구글 서버(백엔드)로 데이터 보내기 (진행률 표시 추가)
         // =========================================================
         form.addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
             submitBtn.disabled = true;
-            submitBtn.textContent = '사진을 변환하여 제출 중입니다. 창을 닫지 마세요...';
+            loadingOverlay.style.display = 'flex'; // 로딩창 띄우기
+            progressPercent.innerText = '0%'; // 퍼센트 초기화
 
             try {
                 // 1. 일반 텍스트 데이터 긁어오기
@@ -547,7 +577,7 @@
                 const data = {};
                 formData.forEach((value, key) => { data[key] = value; });
 
-                // 2. 첨부된 사진 파일들을 찾아 텍스트(Base64)로 변환하여 data 객체에 병합
+                // 2. 첨부된 사진 파일들을 찾아 텍스트(Base64)로 변환
                 const fileMapping = {
                     'carRegCert1': 'carRegCert1',
                     'carRegCert2': 'carRegCert2',
@@ -567,33 +597,58 @@
                 // 3. 구글 스크립트 웹 앱 URL (사용자님의 최신 URL 유지)
                 const scriptURL = 'https://script.google.com/macros/s/AKfycbxZgvJP9LAU0ZVjkYsg-_Yuk0wJFWIPEsJcLbQtlO9kOR_u_t42VsIcpKIVSG0IEZpgIw/exec';
 
-                // 4. 보안(CORS) 우회를 위해 데이터를 text/plain으로 포장해서 전송
-                const response = await fetch(scriptURL, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                
-                const result = await response.json();
-                
-                if (result.result === "success") {
-                    alert('지원사업 신청이 성공적으로 접수되었습니다.\n작성해주셔서 감사합니다.');
-                    localStorage.removeItem('subsidyFormDraft');
-                    form.reset(); 
+                // 4. XMLHttpRequest를 사용하여 보안(CORS) 우회 및 진행률 표시
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', scriptURL, true);
+                xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+
+                // 업로드 진행 상태 확인 (0~99% 표시)
+                xhr.upload.onprogress = function(event) {
+                    if (event.lengthComputable) {
+                        let percentComplete = Math.round((event.loaded / event.total) * 100);
+                        if (percentComplete >= 100) percentComplete = 99; // 서버 처리 시간 고려
+                        progressPercent.innerText = percentComplete + '%';
+                    }
+                };
+
+                // 업로드 완료 후 결과 처리
+                xhr.onload = function() {
+                    loadingOverlay.style.display = 'none'; // 로딩창 닫기
+                    submitBtn.disabled = false;
                     
-                    document.getElementById('carRegExtra').style.display = 'none';
-                    document.getElementById('bizRegExtra').style.display = 'none';
-                    document.querySelectorAll('.add-file-btn').forEach(btn => btn.style.display = 'inline-block');
-                } else {
-                    alert('서버 처리 중 오류가 발생했습니다: ' + result.message);
-                }
+                    if (xhr.status === 200) {
+                        const result = JSON.parse(xhr.responseText);
+                        if(result.result === "success") {
+                            alert('지원사업 신청이 성공적으로 접수되었습니다.\n작성해주셔서 감사합니다.');
+                            localStorage.removeItem('subsidyFormDraft');
+                            form.reset(); 
+                            document.getElementById('carRegExtra').style.display = 'none';
+                            document.getElementById('bizRegExtra').style.display = 'none';
+                            document.querySelectorAll('.add-file-btn').forEach(btn => btn.style.display = 'inline-block');
+                        } else {
+                            // 🚨 주의: 이 부분이 백엔드 에러를 출력해 주는 부분입니다.
+                            alert('서버 처리 중 오류가 발생했습니다: ' + result.message);
+                        }
+                    } else {
+                        alert('통신 중 문제가 발생했습니다. 에러코드: ' + xhr.status);
+                    }
+                };
+
+                // 네트워크 에러 발생 시
+                xhr.onerror = function() {
+                    loadingOverlay.style.display = 'none';
+                    submitBtn.disabled = false;
+                    alert('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+                };
+
+                // 전송 시작
+                xhr.send(JSON.stringify(data));
 
             } catch (error) {
-                alert('통신 중 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.');
-                console.error(error);
-            } finally {
+                loadingOverlay.style.display = 'none';
                 submitBtn.disabled = false;
-                submitBtn.textContent = '신청서 제출하기';
+                alert('처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+                console.error(error);
             }
         });
     </script>
