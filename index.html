@@ -522,23 +522,56 @@
         });
 
         // =========================================================
+        // [수정됨] 사진을 텍스트(Base64)로 변환해주는 마법의 함수 추가
+        // =========================================================
+        const getBase64 = (file) => new Promise((resolve, reject) => {
+            if (!file) { resolve(null); return; }
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve({ name: file.name, base64: reader.result });
+            reader.onerror = error => reject(error);
+        });
+
+        // =========================================================
         // [핵심] 실제 구글 서버(백엔드)로 데이터 보내기
         // =========================================================
         form.addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
             submitBtn.disabled = true;
-            submitBtn.textContent = '제출 중입니다. 창을 닫지 마세요...';
+            submitBtn.textContent = '사진을 변환하여 제출 중입니다. 창을 닫지 마세요...';
 
             try {
+                // 1. 일반 텍스트 데이터 긁어오기
                 const formData = new FormData(form);
+                const data = {};
+                formData.forEach((value, key) => { data[key] = value; });
 
-                // 스크린샷에서 추출한 웹 앱 배포 URL을 정확히 삽입했습니다.
+                // 2. 첨부된 사진 파일들을 찾아 텍스트(Base64)로 변환하여 data 객체에 병합
+                const fileMapping = {
+                    'carRegCert1': 'carRegCert1',
+                    'carRegCert2': 'carRegCert2',
+                    'bizRegCert1': 'bizRegCert1',
+                    'bizRegCert2': 'bizRegCert2'
+                };
+
+                for (const [dataKey, htmlId] of Object.entries(fileMapping)) {
+                    const fileInput = document.getElementById(htmlId);
+                    if (fileInput && fileInput.files.length > 0) {
+                        data[dataKey] = await getBase64(fileInput.files[0]);
+                    } else {
+                        data[dataKey] = null;
+                    }
+                }
+
+                // 3. 구글 스크립트 웹 앱 URL (사용자님의 최신 URL 유지)
                 const scriptURL = 'https://script.google.com/macros/s/AKfycbwrzeYPUIYmkbXDXuTkRzU-DtB6jzHaQeW35E-eqwqjVDm8NwFKpG_X3bOV7sUPDFkijg/exec';
 
+                // 4. 보안(CORS) 우회를 위해 데이터를 text/plain으로 포장해서 전송
                 const response = await fetch(scriptURL, {
                     method: 'POST',
-                    body: formData
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
                 
                 const result = await response.json();
@@ -557,6 +590,7 @@
 
             } catch (error) {
                 alert('통신 중 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.');
+                console.error(error);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '신청서 제출하기';
