@@ -15,7 +15,13 @@
         .banner-text .alert-tag { display: inline-block; background-color: #e74c3c; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
         .banner-text h1 { margin: 0; font-size: 26px; font-weight: bold; word-break: keep-all; }
         .content { padding: 40px; }
-        .intro-text { font-size: 17px; text-align: center; margin-bottom: 40px; color: #555; word-break: keep-all; }
+        
+        /* 인트로 텍스트 및 링크 버튼 스타일 */
+        .intro-text { font-size: 17px; text-align: center; margin-bottom: 20px; color: #555; word-break: keep-all; }
+        .foundation-link-wrapper { text-align: center; margin-bottom: 40px; }
+        .foundation-link { display: inline-block; padding: 10px 24px; background-color: #fff; color: #2b3a42; text-decoration: none; border-radius: 30px; font-size: 14px; font-weight: bold; border: 1px solid #2b3a42; transition: all 0.2s; }
+        .foundation-link:hover { background-color: #2b3a42; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
         .info-box { background-color: white; border: 1px solid #eee; border-radius: 10px; padding: 30px; margin-bottom: 30px; }
         .info-box h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #2b3a42; padding-bottom: 12px; margin-bottom: 20px; font-size: 20px; }
         .info-box h3 { font-size: 16px; color: #444; margin-top: 25px; margin-bottom: 8px; font-weight: bold; }
@@ -23,6 +29,14 @@
         .info-box ul li { position: relative; padding-left: 20px; margin-bottom: 8px; color: #555; font-size: 15px; }
         .info-box ul li:before { content: "▪"; position: absolute; left: 0; color: #2b3a42; }
         .info-box ul li .note { display: block; font-size: 13px; color: #888; margin-top: 2px; }
+        
+        /* 가격표 및 단가 박스 스타일 */
+        .price-box { background-color: #fdfdfd; border: 1px dashed #ccc; padding: 15px; border-radius: 6px; margin: 15px 0 10px 0; text-align: center; }
+        .price-box .price { display: inline-block; margin: 5px 15px; font-size: 15px; color: #2b3a42; }
+        .price-box .price strong { font-size: 16px; color: #e74c3c; }
+        .price-box .vat { display: block; font-size: 12px; color: #888; margin-top: 8px; }
+        .install-notice { display: block; color: #e74c3c; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-align: center; }
+
         .amount-box { background-color: #f1f6f9; padding: 15px; border-radius: 6px; margin-top: 10px; border-left: 5px solid #2b3a42; }
         .amount-box span { font-weight: bold; font-size: 18px; color: #2b3a42; }
         .exclusion-box { background-color: #fdf2f2; color: #c0392b; padding: 8px 12px; border-radius: 4px; display: inline-block; font-size: 13px; margin-top: 5px; }
@@ -103,6 +117,10 @@
         
         <main class="content">
             <p class="intro-text">화물 운수 종사자의 안정적인 업무 환경을 위해<br> 화물복지재단에서 단말기 구입 보조금을 지원합니다.</p>
+            
+            <div class="foundation-link-wrapper">
+                <a href="https://www.fordrivers.or.kr/mobile/main.do" target="_blank" class="foundation-link">👉 화물복지재단 홈페이지 바로가기</a>
+            </div>
 
             <section class="info-box">
                 <h2>사각지대 경고장치</h2>
@@ -118,8 +136,17 @@
                 <h3>□ 지원금액</h3>
                 <div class="amount-box">총 설치 비용 중 <span>35만원</span> 지원</div>
                 
-                <h3>□ 품목</h3>
+                <h3>□ 품목 및 단가</h3>
                 <ul><li>2채널, 4채널, 5채널 사각지대 경고 DVR CAMERA</li></ul>
+                
+                <div class="price-box">
+                    <span class="price"><strong>2채널:</strong> 500,000원</span>
+                    <span class="price"><strong>4채널:</strong> 750,000원</span>
+                    <span class="price"><strong>5채널:</strong> 800,000원</span>
+                    <span class="vat">(VAT 별도)</span>
+                </div>
+                <span class="install-notice">※ 설치는 접수 입력 순서대로 개별 통화 후 출장 장착해 드립니다.</span>
+
                 <div class="product-desc">
                     <strong>#. 사각지대 경고장치란?</strong><br>
                     AI 카메라로 사람 및 사물을 인식하여 운전자에게 주의 경고를 모니터 화면과 경고음으로 알려주는 안전 시스템 제품입니다.
@@ -400,7 +427,7 @@
                 }
 
                 // 🚨 주의: 발급받으신 최신 구글 앱스 스크립트 배포 URL을 반드시 여기에 넣어주세요!
-                const scriptURL = 'https://script.google.com/macros/s/AKfycbwX9opKhgKD_-xHIQGzGVu6z_n4yMeiG4PT-LdLiO3ZDwfqq3ASNaq3vyYW_WgignNaXw/exec';
+                const scriptURL = 'https://script.google.com/macros/s/여기에_새로_발급받은_주소/exec';
 
                 const response = await fetch(scriptURL, {
                     method: 'POST',
